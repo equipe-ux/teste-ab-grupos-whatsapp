@@ -1,0 +1,53 @@
+.iwab .iwab-intro { max-width: 860px; font-size: 14px; }
+.iwab .iwab-back { margin: 12px 0 0; }
+.iwab .num { text-align: right; white-space: nowrap; }
+.iwab .iwab-table { margin-top: 12px; }
+.iwab .iwab-table td { vertical-align: middle; }
+.iwab .iwab-actions { white-space: nowrap; text-align: right; }
+.iwab .iwab-danger, .iwab .button.iwab-danger { color: #b32d2e; }
+.iwab .button.iwab-danger { border-color: #b32d2e; }
+.iwab .iwab-muted { color: #646970; font-weight: 400; }
+.iwab .iwab-url { font-size: 12px; word-break: break-all; }
+
+.iwab .iwab-link { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.iwab .iwab-link code { word-break: break-all; }
+
+.iwab .iwab-slug { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
+.iwab .iwab-slug code { padding: 5px 6px; }
+.iwab .iwab-slug input { min-width: 220px; }
+
+.iwab .iwab-help { max-width: 860px; }
+.iwab .iwab-help p { margin: 0 0 6px; }
+
+.iwab .iwab-version { margin: 14px 0; padding: 12px; background: #fff; border: 1px solid #c3c4c7; border-left: 4px solid #2271b1; max-width: 1100px; }
+.iwab .iwab-version-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.iwab .iwab-version-name { flex: 1 1 260px; }
+.iwab .iwab-weight-label { white-space: nowrap; }
+.iwab .iwab-remove-version { margin-left: auto; }
+.iwab .iwab-letter { display: inline-block; min-width: 26px; padding: 3px 4px; border-radius: 4px; background: #2271b1; color: #fff; font-weight: 600; text-align: center; }
+.iwab .iwab-share { color: #646970; font-size: 12px; }
+.iwab .iwab-groups td { vertical-align: middle; }
+.iwab .iwab-groups .col-label { width: 56px; font-weight: 600; }
+.iwab .iwab-groups .col-limit { width: 140px; }
+.iwab .iwab-groups .col-remove { width: 70px; text-align: right; }
+.iwab .iwab-add-group-wrap { margin: 8px 0 0; }
+.iwab .iwab-full { width: 100%; }
+
+.iwab .iwab-results .iwab-version-row th { background: #f6f7f7; padding-top: 10px; padding-bottom: 10px; }
+.iwab .iwab-status { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 400; }
+.iwab .iwab-status.is-on { background: #e7f6ec; color: #1a7f37; }
+.iwab .iwab-status.is-filling { background: #fcf0d6; color: #8a5a00; }
+.iwab .iwab-status.is-full { background: #fbe9e9; color: #b32d2e; }
+.iwab .iwab-status.is-off { background: #f0f0f1; color: #50575e; }
+
+.iwab .iwab-danger-zone { display: flex; gap: 8px; align-items: center; margin-top: 16px; }
+.iwab .iwab-box { margin-top: 24px; max-width: 860px; padding: 4px 16px 14px; background: #fff; border: 1px solid #c3c4c7; }
+.iwab .iwab-box h2 { font-size: 14px; }
+.iwab .iwab-api th { text-align: left; padding: 4px 12px 4px 0; white-space: nowrap; font-weight: 600; }
+.iwab .iwab-api td { padding: 4px 0; }
+.iwab .iwab-empty { margin-top: 16px; padding: 24px; background: #fff; border: 1px solid #c3c4c7; max-width: 860px; }
+
+@media (max-width: 782px) {
+  .iwab .iwab-groups .col-limit { width: auto; }
+  .iwab .iwab-remove-version { margin-left: 0; }
+}
