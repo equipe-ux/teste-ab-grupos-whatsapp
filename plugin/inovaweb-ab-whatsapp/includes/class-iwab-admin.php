@@ -61,43 +61,49 @@ class IWAB_Admin
     private static function render_list(): void
     {
         $tests = IWAB_Tests::all();
-        echo '<h1 class="wp-heading-inline">Teste A/B WhatsApp</h1> ';
-        echo '<a href="' . esc_url(self::url(['action' => 'new'])) . '" class="page-title-action">Novo teste</a>';
+        echo '<header class="iwab-hero">'
+            . '<div class="iwab-hero-text"><p class="iwab-eyebrow">WhatsApp · Teste A/B</p>'
+            . '<h1>Teste A/B WhatsApp</h1>'
+            . '<p class="iwab-lede">Cada teste tem <strong>um link só</strong> e várias versões (A, B, C…), cada uma com a sua fila de grupos. '
+            . 'Quem clica cai numa versão, na proporção do tráfego, e no grupo que está recebendo nela; o mesmo IP volta sempre para o mesmo grupo. '
+            . 'Os links dos grupos nunca aparecem no site.</p></div>'
+            . '<a href="' . esc_url(self::url(['action' => 'new'])) . '" class="iwab-btn iwab-btn-light">+ Novo teste</a>'
+            . '</header>';
         echo '<hr class="wp-header-end">';
         self::notices();
-        echo '<p class="iwab-intro">Cada teste tem <strong>um link só</strong> e várias versões (A, B, C…). Cada versão tem uma fila de grupos: '
-            . 'o link do SendFlow ou convites do WhatsApp. Quem clica cai numa versão, na proporção do tráfego, e no grupo que está recebendo nela; '
-            . 'o mesmo IP volta sempre para o mesmo grupo. Os links dos grupos nunca aparecem no site.</p>';
 
         if (!$tests) {
-            echo '<div class="iwab-empty"><p>Nenhum teste criado ainda.</p>'
-                . '<p><a class="button button-primary" href="' . esc_url(self::url(['action' => 'new'])) . '">Criar o primeiro teste</a></p></div>';
+            echo '<div class="iwab-panel iwab-empty"><div class="iwab-empty-mark" aria-hidden="true"></div>'
+                . '<h2>Nenhum teste criado ainda</h2><p>Crie um teste, cole os convites dos grupos e use o link dele no botão da página.</p>'
+                . '<p><a class="iwab-btn iwab-btn-primary" href="' . esc_url(self::url(['action' => 'new'])) . '">Criar o primeiro teste</a></p></div>';
         } else {
-            echo '<table class="widefat striped iwab-table"><thead><tr>'
-                . '<th>Teste</th><th>Link</th><th class="num">Versões no ar</th><th class="num">Grupos com vaga</th><th class="num">Pessoas</th><th class="num">Cliques</th><th></th>'
-                . '</tr></thead><tbody>';
+            echo '<div class="iwab-cards">';
             foreach ($tests as $test) {
                 $edit = self::url(['action' => 'edit', 'id' => $test->id]);
-                $open = (int) $test->groups_open . ' de ' . (int) $test->groups_total;
-                if ($test->groups_total && !$test->groups_open) {
-                    $open = '<span class="iwab-status is-full">Todos cheios</span>';
-                }
-                echo '<tr>'
-                    . '<td><strong><a href="' . esc_url($edit) . '">' . esc_html($test->name) . '</a></strong></td>'
-                    . '<td>' . self::copy_link(IWAB_Router::link($test->slug)) . '</td>'
-                    . '<td class="num">' . (int) $test->versions_running . ' de ' . (int) $test->versions_total . '</td>'
-                    . '<td class="num">' . $open . '</td>'
-                    . '<td class="num">' . esc_html(number_format_i18n($test->people)) . '</td>'
-                    . '<td class="num">' . esc_html(number_format_i18n($test->clicks)) . '</td>'
-                    . '<td class="iwab-actions"><a href="' . esc_url($edit) . '">Editar</a> | '
-                    . '<a class="iwab-danger" href="' . esc_url(self::delete_url((int) $test->id)) . '" data-confirm="'
-                    . esc_attr('Excluir o teste "' . $test->name . '" e os resultados dele? O link para de funcionar.') . '">Excluir</a></td>'
-                    . '</tr>';
+                $all_full = $test->groups_total && !$test->groups_open;
+                $chip = $all_full
+                    ? '<span class="iwab-status is-full">Todos cheios</span>'
+                    : ((int) $test->versions_running ? '<span class="iwab-status is-on">No ar</span>' : '<span class="iwab-status is-off">Pausado</span>');
+                echo '<article class="iwab-card iwab-test-card">'
+                    . '<div class="iwab-card-head"><h2><a href="' . esc_url($edit) . '">' . esc_html($test->name) . '</a></h2>' . $chip . '</div>'
+                    . self::copy_link(IWAB_Router::link($test->slug))
+                    . '<dl class="iwab-stats">'
+                    . self::stat('Versões no ar', (int) $test->versions_running, (int) $test->versions_total)
+                    . self::stat('Grupos com vaga', (int) $test->groups_open, (int) $test->groups_total)
+                    . self::stat('Pessoas', (int) $test->people)
+                    . self::stat('Cliques', (int) $test->clicks)
+                    . '</dl>'
+                    . '<div class="iwab-card-foot"><a class="iwab-btn iwab-btn-primary" href="' . esc_url($edit) . '">Abrir teste</a>'
+                    . '<a class="iwab-text-danger" href="' . esc_url(self::delete_url((int) $test->id)) . '" data-confirm="'
+                    . esc_attr('Excluir o teste "' . $test->name . '" e os resultados dele? O link para de funcionar.') . '">Excluir</a></div>'
+                    . '</article>';
             }
-            echo '</tbody></table>';
+            echo '</div>';
         }
+        echo '<div class="iwab-grid-2">';
         self::ip_box();
         self::api_box();
+        echo '</div>';
     }
 
     private static function render_edit(int $id): void
@@ -138,10 +144,16 @@ class IWAB_Admin
         }
 
         echo '<p class="iwab-back"><a href="' . esc_url(self::url()) . '">← Todos os testes</a></p>';
-        echo '<h1>' . ($test ? 'Editar teste' : 'Novo teste') . '</h1>';
+        echo '<header class="iwab-hero iwab-hero-compact"><div class="iwab-hero-text">'
+            . '<p class="iwab-eyebrow">' . ($test ? 'Editar teste' : 'Novo teste') . '</p>'
+            . '<h1>' . esc_html($test ? $test->name : 'Novo teste') . '</h1>'
+            . ($test ? '<div class="iwab-current"><span class="iwab-current-label">Link do teste</span>' . self::copy_link(IWAB_Router::link($test->slug)) . '</div>' : '')
+            . '</div></header>';
+        echo '<hr class="wp-header-end">';
         self::notices($errors);
+
         if ($test) {
-            echo '<p class="iwab-current">Link do teste: ' . self::copy_link(IWAB_Router::link($test->slug)) . '</p>';
+            self::render_results($test);
         }
 
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" class="iwab-form">';
@@ -149,41 +161,47 @@ class IWAB_Admin
         echo '<input type="hidden" name="action" value="iwab_save">';
         echo '<input type="hidden" name="id" value="' . (int) $id . '">';
 
-        echo '<table class="form-table" role="presentation"><tbody>';
-        echo '<tr><th scope="row"><label for="iwab-name">Nome do teste</label></th><td>'
-            . '<input type="text" id="iwab-name" name="name" class="regular-text" value="' . esc_attr((string) $data['name']) . '" placeholder="Ex.: Lançamento março — grupos">'
-            . '<p class="description">Só aparece aqui no painel.</p></td></tr>';
-        echo '<tr><th scope="row"><label for="iwab-slug">Link</label></th><td>'
-            . '<div class="iwab-slug"><code>' . esc_html(IWAB_Router::base()) . '</code>'
+        echo '<section class="iwab-panel"><div class="iwab-panel-head"><div><h2>Configuração</h2>'
+            . '<p class="iwab-hint">Nome, link e quando um grupo conta como cheio.</p></div></div>';
+        echo '<div class="iwab-fields">';
+        echo '<div class="iwab-field"><label for="iwab-name">Nome do teste</label>'
+            . '<input type="text" id="iwab-name" name="name" value="' . esc_attr((string) $data['name']) . '" placeholder="Ex.: Lançamento março — grupos">'
+            . '<p class="iwab-hint">Só aparece aqui no painel.</p></div>';
+        echo '<div class="iwab-field iwab-field-wide"><label for="iwab-slug">Link</label>'
+            . '<div class="iwab-slug"><span class="iwab-slug-base">' . esc_html(IWAB_Router::base()) . '</span>'
             . '<input type="text" id="iwab-slug" name="slug" value="' . esc_attr((string) $data['slug']) . '" placeholder="lancamento-marco"></div>'
-            . '<p class="description">É este link que vai no botão da página. Vazio: usa o nome do teste.</p></td></tr>';
-        echo '<tr><th scope="row"><label for="iwab-full-at">Grupo cheio com</label></th><td>'
-            . '<input type="number" id="iwab-full-at" name="full_at" min="1" max="' . IWAB_Tests::WHATSAPP_MAX . '" class="small-text" value="' . (int) $data['full_at'] . '"> membros'
-            . '<p class="description">Vale para a contagem real que o n8n manda (WAHA). O WhatsApp aceita até ' . IWAB_Tests::WHATSAPP_MAX . ' por grupo.</p></td></tr>';
-        echo '</tbody></table>';
+            . '<p class="iwab-hint">É este link que vai no botão da página. Vazio: usa o nome do teste.</p></div>';
+        echo '<div class="iwab-field"><label for="iwab-full-at">Grupo cheio com</label>'
+            . '<div class="iwab-suffix"><input type="number" id="iwab-full-at" name="full_at" min="1" max="' . IWAB_Tests::WHATSAPP_MAX . '" value="' . (int) $data['full_at'] . '"><span>membros</span></div>'
+            . '<p class="iwab-hint">Vale para a contagem real que o n8n manda (WAHA). O WhatsApp aceita até ' . IWAB_Tests::WHATSAPP_MAX . ' por grupo.</p></div>';
+        echo '</div></section>';
 
-        echo '<h2>Versões</h2>';
-        echo '<div class="description iwab-help"><p><strong>Tráfego</strong>: a divisão entre as versões é proporcional (50 e 50 = metade para cada; 70 e 30 = 70/30). '
+        echo '<section class="iwab-panel"><div class="iwab-panel-head"><div><h2>Versões e filas de grupos</h2>'
+            . '<p class="iwab-hint">Cada versão recebe a sua parte do tráfego e manda as pessoas para o primeiro grupo com vaga da fila.</p></div></div>';
+        echo '<details class="iwab-help"><summary>Como funciona o tráfego, a fila e o limite de envios</summary>'
+            . '<p><strong>Tráfego</strong>: a divisão entre as versões é proporcional (50 e 50 = metade para cada; 70 e 30 = 70/30). '
             . '<strong>0% pausa a versão</strong>: ninguém novo vai para ela e quem era dela cai em outra no próximo clique.</p>'
             . '<p><strong>Grupos</strong>: a fila da versão, em ordem. Enquanto o 1º tem vaga, todo mundo da versão vai para ele; encheu, passa para o 2º, e assim por diante. '
             . 'Pode ser o link do SendFlow (ele cuida da lotação sozinho) ou convites do WhatsApp (https://chat.whatsapp.com/…).</p>'
             . '<p><strong>Limite de envios</strong>: quantas pessoas o plugin manda para o grupo antes de considerá-lo cheio (vazio = sem limite). '
-            . 'Como nem todo mundo que clica entra, o grupo fica com menos gente que esse número. Com o n8n ligado, vale também o "cheio com N membros" acima.</p></div>';
+            . 'Como nem todo mundo que clica entra, o grupo fica com menos gente que esse número. Com o n8n ligado, vale também o "cheio com N membros" acima.</p></details>';
 
         echo '<div id="iwab-versions">';
         foreach (array_values((array) $data['versions']) as $vi => $version) {
             echo self::version_block((string) $vi, is_array($version) ? $version : []);
         }
         echo '</div>';
-        echo '<p><button type="button" class="button" id="iwab-add-version">+ Adicionar versão</button></p>';
+        echo '<p class="iwab-add-version-wrap"><button type="button" class="iwab-btn iwab-btn-ghost" id="iwab-add-version">+ Adicionar versão</button></p>';
+        echo '</section>';
         echo '<template id="iwab-version-tpl">' . self::version_block('__v__', ['groups' => [[]]]) . '</template>';
         echo '<template id="iwab-group-tpl">' . self::group_row('__v__', '__g__', []) . '</template>';
 
-        submit_button($test ? 'Salvar teste' : 'Criar teste');
+        echo '<div class="iwab-savebar"><span class="iwab-hint">As mudanças só valem depois de salvar.</span>'
+            . '<button type="submit" class="iwab-btn iwab-btn-primary">' . ($test ? 'Salvar teste' : 'Criar teste') . '</button></div>';
         echo '</form>';
 
         if ($test) {
-            self::render_results($test);
+            self::danger_zone($test);
         }
     }
 
@@ -201,14 +219,14 @@ class IWAB_Admin
             . '<span class="iwab-letter">' . esc_html($letter) . '</span>'
             . '<input type="hidden" name="' . $name . '[id]" value="' . (int) ($version['id'] ?? 0) . '">'
             . '<input type="text" name="' . $name . '[name]" value="' . esc_attr((string) ($version['name'] ?? '')) . '" placeholder="Nome da versão (opcional), ex.: Grupo com vídeo" class="iwab-version-name">'
-            . '<label class="iwab-weight-label">Tráfego <input type="number" min="0" max="100" step="1" name="' . $name . '[weight]" value="' . $weight . '" class="small-text iwab-weight"></label> '
+            . '<label class="iwab-weight-label"><span>Tráfego</span><input type="number" min="0" max="100" step="1" name="' . $name . '[weight]" value="' . $weight . '" class="iwab-weight"></label>'
             . '<span class="iwab-share" aria-live="polite"></span>'
             . '<button type="button" class="button-link iwab-remove-version iwab-danger">Remover versão</button>'
             . '</div>'
-            . '<table class="widefat iwab-groups"><thead><tr>'
+            . '<table class="iwab-groups"><thead><tr>'
             . '<th class="col-label">Grupo</th><th>Link (SendFlow ou convite do WhatsApp)</th><th class="col-limit">Limite de envios</th><th class="col-remove"></th>'
             . '</tr></thead><tbody class="iwab-group-rows">' . $rows . '</tbody></table>'
-            . '<p class="iwab-add-group-wrap"><button type="button" class="button button-small iwab-add-group">+ Adicionar grupo</button></p>'
+            . '<p class="iwab-add-group-wrap"><button type="button" class="iwab-btn iwab-btn-small iwab-add-group">+ Adicionar grupo</button></p>'
             . '</div>';
     }
 
@@ -219,106 +237,172 @@ class IWAB_Admin
         return '<tr>'
             . '<td class="col-label"><span class="iwab-group-label"></span>'
             . '<input type="hidden" name="' . $name . '[id]" value="' . (int) ($group['id'] ?? 0) . '"></td>'
-            . '<td><input type="text" inputmode="url" name="' . $name . '[url]" value="' . esc_attr((string) ($group['url'] ?? '')) . '" placeholder="https://chat.whatsapp.com/... ou link do SendFlow" class="iwab-full"></td>'
-            . '<td class="col-limit"><input type="number" min="0" name="' . $name . '[max_people]" value="' . ($max > 0 ? $max : '') . '" placeholder="sem" class="small-text"></td>'
-            . '<td class="col-remove"><button type="button" class="button-link iwab-remove-group iwab-danger">Remover</button></td>'
+            . '<td class="col-url"><input type="text" inputmode="url" name="' . $name . '[url]" value="' . esc_attr((string) ($group['url'] ?? '')) . '" placeholder="https://chat.whatsapp.com/... ou link do SendFlow" class="iwab-full" aria-label="Link do grupo"></td>'
+            . '<td class="col-limit"><input type="number" min="0" name="' . $name . '[max_people]" value="' . ($max > 0 ? $max : '') . '" placeholder="sem limite" aria-label="Limite de envios"></td>'
+            . '<td class="col-remove"><button type="button" class="button-link iwab-remove-group iwab-danger" aria-label="Remover grupo">Remover</button></td>'
             . '</tr>';
     }
 
     private static function render_results(object $test): void
     {
         $id = (int) $test->id;
-        $versions = IWAB_Tests::structure($id, $test);
+        $versions = array_values(IWAB_Tests::structure($id, $test));
         $full_at = IWAB_Tests::full_at($test);
         $total_people = 0;
         $total_weight = 0;
+        $total_clicks = 0;
+        $groups_total = 0;
+        $groups_open = 0;
+        $running = 0;
         foreach ($versions as $version) {
             $total_people += $version->people;
             $total_weight += max(0, (int) $version->weight);
+            $has_room = false;
+            foreach ($version->groups as $group) {
+                $total_clicks += $group->clicks;
+                $groups_total++;
+                if (!$group->full) {
+                    $groups_open++;
+                    $has_room = true;
+                }
+            }
+            if ((int) $version->weight > 0 && $has_room) {
+                $running++;
+            }
         }
 
-        echo '<h2>Resultados</h2>';
-        echo '<p class="description">Enviadas = IPs diferentes mandados para o grupo. Membros = contagem real que o n8n mandou (WAHA). Cliques = todos os acessos, contando repetições.</p>';
-        echo '<table class="widefat iwab-table iwab-results"><thead><tr>'
-            . '<th>Grupo</th><th>Situação</th><th class="num">Enviadas</th><th class="num">Membros</th><th class="num">Cliques</th>'
-            . '</tr></thead><tbody>';
-        foreach ($versions as $version) {
+        echo '<section class="iwab-panel iwab-results"><div class="iwab-panel-head"><div><h2>Resultados</h2>'
+            . '<p class="iwab-hint">Enviadas = IPs diferentes mandados para o grupo. Membros = contagem real que o n8n mandou (WAHA). Cliques = todos os acessos, contando repetições.</p></div></div>';
+
+        echo '<dl class="iwab-kpis">'
+            . self::stat('Pessoas', $total_people)
+            . self::stat('Cliques', $total_clicks)
+            . self::stat('Versões no ar', $running, count($versions))
+            . self::stat('Grupos com vaga', $groups_open, $groups_total)
+            . '</dl>';
+
+        // Divisão do tráfego: o que foi planejado (pesos) contra o que aconteceu (pessoas por versão).
+        $planned = '';
+        $real = '';
+        $legend = '';
+        foreach ($versions as $i => $version) {
+            $weight = max(0, (int) $version->weight);
+            $color = 'is-c' . ($i % 6);
+            $label = $version->letter . ($version->name !== '' ? ' · ' . $version->name : '');
+            if ($weight > 0 && $total_weight > 0) {
+                $planned .= '<span class="iwab-seg ' . $color . '" style="width:' . esc_attr(self::width($weight, $total_weight)) . '" title="' . esc_attr($label . ': ' . self::percent($weight, $total_weight)) . '">' . esc_html($version->letter) . '</span>';
+            }
+            if ($version->people > 0) {
+                $real .= '<span class="iwab-seg ' . $color . '" style="width:' . esc_attr(self::width($version->people, $total_people)) . '" title="' . esc_attr($label . ': ' . self::percent($version->people, $total_people)) . '">' . esc_html($version->letter) . '</span>';
+            }
+            $legend .= '<li><span class="iwab-dot ' . $color . '"></span>' . esc_html($label) . '</li>';
+        }
+        echo '<div class="iwab-split">'
+            . '<div class="iwab-split-row"><span class="iwab-split-label">Planejado</span><div class="iwab-split-bar">' . ($planned ?: '<span class="iwab-split-empty">todas as versões pausadas</span>') . '</div></div>'
+            . '<div class="iwab-split-row"><span class="iwab-split-label">Real</span><div class="iwab-split-bar">' . ($real ?: '<span class="iwab-split-empty">ninguém clicou ainda</span>') . '</div></div>'
+            . '<ul class="iwab-legend">' . $legend . '</ul>'
+            . '</div>';
+
+        echo '<div class="iwab-rversions">';
+        foreach ($versions as $i => $version) {
             $weight = (int) $version->weight;
-            $head = $version->letter . ($version->name !== '' ? ' · ' . $version->name : '');
-            $split = 'pessoas: ' . number_format_i18n($version->people) . ' (' . self::percent($version->people, $total_people) . ' real · '
-                . ($weight > 0 ? self::percent($weight, $total_weight) : '0%') . ' planejado)';
-            echo '<tr class="iwab-version-row"><th colspan="5"><span class="iwab-letter">' . esc_html($version->letter) . '</span> <strong>' . esc_html($head) . '</strong>'
-                . ' <span class="iwab-muted">— ' . esc_html($split) . '</span>'
-                . ($weight > 0 ? '' : ' <span class="iwab-status is-off">Pausada</span>') . '</th></tr>';
+            $color = 'is-c' . ($i % 6);
+            $split = number_format_i18n($version->people) . ' ' . ($version->people === 1 ? 'pessoa' : 'pessoas')
+                . ' · ' . self::percent($version->people, $total_people) . ' real · '
+                . ($weight > 0 ? self::percent($weight, $total_weight) : '0%') . ' planejado';
+            echo '<div class="iwab-rversion ' . $color . ($weight > 0 ? '' : ' is-paused') . '">'
+                . '<div class="iwab-rversion-head"><span class="iwab-letter ' . $color . '">' . esc_html($version->letter) . '</span>'
+                . '<div class="iwab-rversion-title"><strong>' . esc_html($version->name !== '' ? $version->name : 'Versão ' . $version->letter) . '</strong>'
+                . '<span class="iwab-muted">' . esc_html($split) . '</span></div>'
+                . ($weight > 0 ? '' : '<span class="iwab-status is-off">Pausada</span>') . '</div>';
+            echo '<ul class="iwab-rgroups">';
             foreach ($version->groups as $group) {
                 if ($group->full) {
                     $status = '<span class="iwab-status is-full">Cheio</span>';
+                } elseif ($group->open && $weight > 0) {
+                    $status = '<span class="iwab-status is-on">Recebendo</span>' . ($group->filling ? '<span class="iwab-status is-filling">Enchendo</span>' : '');
                 } elseif ($group->open) {
-                    $status = '<span class="iwab-status is-on">Recebendo</span>' . ($group->filling ? ' <span class="iwab-status is-filling">Enchendo</span>' : '');
+                    $status = '<span class="iwab-status is-off">Parado</span>';
                 } else {
                     $status = '<span class="iwab-status is-off">Na fila</span>';
                 }
+                $state = $group->full ? 'is-full' : ($group->filling ? 'is-filling' : 'is-ok');
                 $max = (int) $group->max_people;
-                $sent = number_format_i18n($group->sent) . ($max > 0 ? ' / ' . number_format_i18n($max) : '');
-                if ($group->members === null) {
-                    $members = '<span class="iwab-muted">—</span>';
-                } else {
-                    $ago = human_time_diff((int) strtotime($group->members_at . ' UTC'), time());
-                    $members = esc_html(number_format_i18n($group->members) . ' / ' . number_format_i18n($full_at))
-                        . '<br><span class="iwab-muted">há ' . esc_html($ago) . '</span>';
-                }
-                echo '<tr>'
-                    . '<td><strong>' . esc_html(IWAB_Tests::group_label($version, $group)) . '</strong><br><span class="iwab-muted iwab-url">' . esc_html($group->url) . '</span></td>'
-                    . '<td>' . $status . '</td>'
-                    . '<td class="num">' . esc_html($sent) . '</td>'
-                    . '<td class="num">' . $members . '</td>'
-                    . '<td class="num">' . esc_html(number_format_i18n($group->clicks)) . '</td>'
-                    . '</tr>';
-            }
-        }
-        echo '</tbody></table>';
 
-        echo '<div class="iwab-danger-zone">';
+                if ($group->members !== null) {
+                    $ago = human_time_diff((int) strtotime($group->members_at . ' UTC'), time());
+                    $members = '<span class="iwab-metric-value">' . esc_html(number_format_i18n($group->members)) . '<small> / ' . esc_html(number_format_i18n($full_at)) . '</small></span>'
+                        . self::bar($group->members, $full_at)
+                        . '<span class="iwab-metric-note">há ' . esc_html($ago) . '</span>';
+                } elseif (IWAB_Tests::invite_code((string) $group->url) === '') {
+                    $members = '<span class="iwab-metric-value is-empty">—</span><span class="iwab-metric-note">o SendFlow cuida da lotação</span>';
+                } else {
+                    $members = '<span class="iwab-metric-value is-empty">—</span><span class="iwab-metric-note">aguardando o n8n</span>';
+                }
+                $sent = '<span class="iwab-metric-value">' . esc_html(number_format_i18n($group->sent))
+                    . ($max > 0 ? '<small> / ' . esc_html(number_format_i18n($max)) . '</small>' : '') . '</span>'
+                    . ($max > 0 ? self::bar($group->sent, $max) : '<span class="iwab-metric-note">sem limite</span>');
+
+                echo '<li class="iwab-rgroup ' . $state . ($group->open && $weight > 0 ? ' is-current' : '') . '">'
+                    . '<div class="iwab-rgroup-id"><div class="iwab-rgroup-name"><strong>' . esc_html(IWAB_Tests::group_label($version, $group)) . '</strong>' . $status . '</div>'
+                    . '<span class="iwab-url" title="' . esc_attr($group->url) . '">' . esc_html($group->url) . '</span></div>'
+                    . '<div class="iwab-metric"><span class="iwab-metric-label">Membros</span>' . $members . '</div>'
+                    . '<div class="iwab-metric"><span class="iwab-metric-label">Enviadas</span>' . $sent . '</div>'
+                    . '<div class="iwab-metric iwab-metric-clicks"><span class="iwab-metric-label">Cliques</span><span class="iwab-metric-value">' . esc_html(number_format_i18n($group->clicks)) . '</span></div>'
+                    . '</li>';
+            }
+            echo '</ul></div>';
+        }
+        echo '</div></section>';
+    }
+
+    private static function danger_zone(object $test): void
+    {
+        $id = (int) $test->id;
+        echo '<section class="iwab-panel iwab-danger-zone"><div><h2>Zona de cuidado</h2>'
+            . '<p class="iwab-hint">Zerar redistribui todo mundo no próximo clique (não mexe na contagem de membros). Excluir apaga o teste e o link para de funcionar.</p></div>'
+            . '<div class="iwab-danger-actions">';
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         wp_nonce_field('iwab_reset_' . $id);
         echo '<input type="hidden" name="action" value="iwab_reset"><input type="hidden" name="id" value="' . $id . '">';
-        echo '<button type="submit" class="button" data-confirm="Zerar os resultados deste teste? Todo mundo vai ser redistribuído no próximo clique (quem já clicou pode cair em outro grupo).">Zerar resultados</button>';
+        echo '<button type="submit" class="iwab-btn" data-confirm="Zerar os resultados deste teste? Todo mundo vai ser redistribuído no próximo clique (quem já clicou pode cair em outro grupo).">Zerar resultados</button>';
         echo '</form>';
-        echo '<a class="button iwab-danger" href="' . esc_url(self::delete_url($id)) . '" data-confirm="'
+        echo '<a class="iwab-btn iwab-btn-danger" href="' . esc_url(self::delete_url($id)) . '" data-confirm="'
             . esc_attr('Excluir o teste "' . $test->name . '" e os resultados dele? O link para de funcionar.') . '">Excluir teste</a>';
-        echo '</div>';
+        echo '</div></section>';
     }
 
     /** IP que o plugin enxerga no acesso do próprio administrador: se não for o dele, a separação por IP não funciona. */
     private static function ip_box(): void
     {
         $ip = IWAB_IP::client();
-        echo '<div class="iwab-box"><h2>IP detectado</h2><p>Seu acesso agora: <code>' . esc_html($ip !== '' ? $ip : 'nenhum') . '</code>. '
-            . 'Confira num site de "qual é meu IP": se for diferente, o plugin está vendo o IP do servidor e todo mundo cairia no mesmo grupo.</p>';
+        echo '<section class="iwab-panel iwab-box"><h2>IP detectado</h2>'
+            . '<p class="iwab-ip"><code>' . esc_html($ip !== '' ? $ip : 'nenhum') . '</code></p>'
+            . '<p class="iwab-hint">É o seu acesso agora. Confira num site de "qual é meu IP": se for diferente, o plugin está vendo o IP do servidor e todo mundo cairia no mesmo grupo.</p>';
         $forwarded = IWAB_IP::forwarded();
         if ($forwarded !== '' && $forwarded !== $ip) {
             echo '<div class="notice notice-warning inline"><p>Este site está atrás de um proxy que o plugin não reconhece; ele informou o IP <code>'
                 . esc_html($forwarded) . '</code>. Se esse for o seu IP de verdade, acrescente <code>define(\'IWAB_TRUST_FORWARDED\', true);</code> no <code>wp-config.php</code>.</p></div>';
         }
-        echo '</div>';
+        echo '</section>';
     }
 
     /** Dados que vão no n8n: endereços da API e a chave. */
     private static function api_box(): void
     {
         $base = rest_url(IWAB_API::NS);
-        echo '<div class="iwab-box"><h2>Integração com o n8n (contagem real de membros)</h2>'
-            . '<p>O n8n consulta os grupos no WAHA de tempos em tempos e manda o número de membros para cá. Grupo que chega no "cheio com N membros" do teste para de receber gente nova.</p>'
-            . '<table class="iwab-api"><tbody>'
-            . '<tr><th>Listar grupos (GET)</th><td>' . self::copy_link($base . '/groups') . '</td></tr>'
-            . '<tr><th>Enviar membros (POST)</th><td>' . self::copy_link($base . '/groups/{id}') . ' <span class="iwab-muted">corpo: {"members": 987, "jid": "…@g.us"}</span></td></tr>'
-            . '<tr><th>Chave (cabeçalho X-IWAB-Key)</th><td>' . self::copy_link(IWAB_API::key()) . '</td></tr>'
-            . '</tbody></table>'
+        echo '<section class="iwab-panel iwab-box"><h2>Integração com o n8n</h2>'
+            . '<p class="iwab-hint">O n8n consulta os grupos no WAHA de tempos em tempos e manda o número de membros para cá. Grupo que chega no "cheio com N membros" do teste para de receber gente nova.</p>'
+            . '<dl class="iwab-api">'
+            . '<div><dt>Listar grupos <span class="iwab-method">GET</span></dt><dd>' . self::copy_link($base . '/groups') . '</dd></div>'
+            . '<div><dt>Enviar membros <span class="iwab-method">POST</span></dt><dd>' . self::copy_link($base . '/groups/{id}') . '<span class="iwab-hint">corpo: {"members": 987, "jid": "…@g.us"}</span></dd></div>'
+            . '<div><dt>Chave <span class="iwab-method">X-IWAB-Key</span></dt><dd>' . self::copy_link(IWAB_API::key()) . '</dd></div>'
+            . '</dl>'
             . '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         wp_nonce_field('iwab_new_key');
         echo '<input type="hidden" name="action" value="iwab_new_key">'
-            . '<button type="submit" class="button" data-confirm="Gerar uma chave nova? O n8n para de conseguir enviar até você trocar a chave lá também.">Gerar nova chave</button>'
-            . '</form></div>';
+            . '<button type="submit" class="iwab-btn iwab-btn-small" data-confirm="Gerar uma chave nova? O n8n para de conseguir enviar até você trocar a chave lá também.">Gerar nova chave</button>'
+            . '</form></section>';
     }
 
     public static function handle_save(): void
@@ -402,8 +486,28 @@ class IWAB_Admin
 
     private static function copy_link(string $text): string
     {
-        return '<span class="iwab-link"><code>' . esc_html($text) . '</code> '
-            . '<button type="button" class="button button-small iwab-copy" data-copy="' . esc_attr($text) . '">Copiar</button></span>';
+        return '<span class="iwab-link"><code>' . esc_html($text) . '</code>'
+            . '<button type="button" class="iwab-copy" data-copy="' . esc_attr($text) . '">Copiar</button></span>';
+    }
+
+    /** Número grande com rótulo (cartões e resumo). "de N" quando é parte de um total. */
+    private static function stat(string $label, int $value, ?int $of = null): string
+    {
+        return '<div class="iwab-stat"><dt>' . esc_html($label) . '</dt><dd>' . esc_html(number_format_i18n($value))
+            . ($of !== null ? '<small> de ' . esc_html(number_format_i18n($of)) . '</small>' : '') . '</dd></div>';
+    }
+
+    /** Barra de lotação: quanto do limite já foi usado (amarela a partir de 90%, vermelha no limite). */
+    private static function bar(int $value, int $max): string
+    {
+        $state = $value >= $max ? 'is-full' : ($value >= $max * 0.9 ? 'is-filling' : 'is-ok');
+        return '<span class="iwab-bar ' . esc_attr($state) . '"><span style="width:' . esc_attr(self::width($value, $max)) . '"></span></span>';
+    }
+
+    private static function width(int $part, int $total): string
+    {
+        $pct = $total > 0 ? min(100, max(0, $part * 100 / $total)) : 0;
+        return rtrim(rtrim(number_format($pct, 2, '.', ''), '0'), '.') . '%';
     }
 
     private static function percent(int $part, int $total): string
